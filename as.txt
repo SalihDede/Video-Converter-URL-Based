@@ -1,0 +1,8 @@
+YouTube: En yaygın olarak kullanılan platformdur.
+Vimeo: Vimeo'dan video indirme desteği.
+Dailymotion: Dailymotion videolarını indirme.
+Facebook: Facebook'tan video indirme.
+Instagram: Instagram'dan video ve hikaye indirme.
+Twitter: Twitter'dan video indirme.
+Twitch: Twitch yayınlarını indirme.
+TikTok: TikTok videolarını indirme.
