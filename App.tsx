@@ -1,16 +1,34 @@
 // App.tsx
-import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, ActivityIndicator, Alert, StyleSheet, Animated } from 'react-native';
 import axios from 'axios';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import Icon from 'react-native-vector-icons/Ionicons'; // İkon kütüphanesini ekleyin
+import io, { Socket } from "socket.io-client";
 
 const App = () => {
   const [url, setUrl] = useState('');
   const [format, setFormat] = useState<'mp3' | 'mp4'>('mp3');
   const [loading, setLoading] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [socket, setSocket] = useState<ReturnType<typeof io> | null>(null);
+
+  useEffect(() => {
+    // Socket.IO bağlantısını kur
+    const newSocket = io('http://127.0.0.1:5000');
+    setSocket(newSocket);
+
+    // Progress olayını dinle
+    newSocket.on('progress', (data) => {
+      setProgress(data.progress);
+    });
+
+    // Component unmount olduğunda bağlantıyı kapat
+    return () => {
+      newSocket.close();
+    };
+  }, []);
 
   const isValidUrl = (string) => {
     try {
@@ -23,7 +41,7 @@ const App = () => {
 
   const downloadFile = async () => {
     if (!url || !isValidUrl(url)) {
-      Alert.alert('Error', 'Please enter a valid YouTube link');
+      Alert.alert('Hata', 'Lütfen geçerli bir YouTube linki girin');
       return;
     }
 
@@ -35,12 +53,6 @@ const App = () => {
         { url, format },
         {
           responseType: 'arraybuffer',
-          onDownloadProgress: (progressEvent) => {
-            const percentCompleted = Math.round(
-              (progressEvent.loaded * 100) / progressEvent.total
-            );
-            setProgress(percentCompleted / 100); // Progress in decimal
-          },
         }
       );
 
@@ -49,10 +61,10 @@ const App = () => {
         encoding: FileSystem.EncodingType.Base64,
       });
 
-      Alert.alert('Success', `File downloaded to ${fileUri}`);
+      Alert.alert('Başarılı', 'Dosya başarıyla indirildi!');
       await Sharing.shareAsync(fileUri);
     } catch (error) {
-      Alert.alert('Error', 'Failed to download file. Please try again.');
+      Alert.alert('Hata', 'Dosya indirilirken bir hata oluştu. Lütfen tekrar deneyin.');
       console.error(error);
     } finally {
       setLoading(false);
@@ -63,55 +75,85 @@ const App = () => {
   return (
     <View style={styles.outerContainer}>
       <View style={styles.container}>
-        <Text style={styles.title}>YouTube Downloader</Text>
-        <Text style={styles.subtitle}>Download YouTube videos as MP3 or MP4</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Enter YouTube link"
-          placeholderTextColor="#A9A9A9"
-          value={url}
-          onChangeText={setUrl}
-        />
+        <View style={styles.header}>
+          <Icon name="cloud-download" size={40} color="#007BFF" />
+          <Text style={styles.title}>YouTube Downloader</Text>
+          <Text style={styles.subtitle}>Video ve Ses İndirme Aracı</Text>
+        </View>
+
+        <View style={styles.inputContainer}>
+          <Icon name="link" size={20} color="#666" style={styles.inputIcon} />
+          <TextInput
+            style={styles.input}
+            placeholder="YouTube linkini yapıştırın"
+            placeholderTextColor="#A9A9A9"
+            value={url}
+            onChangeText={setUrl}
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          {url.length > 0 && (
+            <TouchableOpacity 
+              onPress={() => setUrl('')} 
+              style={styles.clearButton}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Icon name="close-circle" size={20} color="#666" />
+            </TouchableOpacity>
+          )}
+        </View>
+
         <View style={styles.buttons}>
-                <TouchableOpacity
-          style={[styles.formatButton, format === 'mp3' && styles.activeButton]}
-          onPress={() => setFormat('mp3')}
-        >
-          <Icon name="musical-note" size={18} color={format === 'mp3' ? '#fff' : '#007BFF'} />
-          <Text style={[styles.buttonText, format === 'mp3' && styles.activeButtonText]}>MP3</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.formatButton, format === 'mp3' && styles.activeButton]}
+            onPress={() => setFormat('mp3')}
+          >
+            <Icon name="musical-note" size={24} color={format === 'mp3' ? '#fff' : '#007BFF'} />
+            <Text style={[styles.buttonText, format === 'mp3' && styles.activeButtonText]}>MP3</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.formatButton, format === 'mp4' && styles.activeButton]}
+            onPress={() => setFormat('mp4')}
+          >
+            <Icon name="videocam" size={24} color={format === 'mp4' ? '#fff' : '#007BFF'} />
+            <Text style={[styles.buttonText, format === 'mp4' && styles.activeButtonText]}>MP4</Text>
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity
-          style={[styles.formatButton, format === 'mp4' && styles.activeButton]}
-          onPress={() => setFormat('mp4')}
+          style={[styles.downloadButton, loading && styles.downloadingButton]}
+          onPress={downloadFile}
+          disabled={loading || !url}
         >
-          <Icon name="videocam" size={18} color={format === 'mp4' ? '#fff' : '#007BFF'} />
-          <Text style={[styles.buttonText, format === 'mp4' && styles.activeButtonText]}>MP4</Text>
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="small" color="#fff" />
+              <Text style={styles.downloadText}>İndiriliyor...</Text>
+            </View>
+          ) : (
+            <>
+              <Icon name="cloud-download-outline" size={24} color="#fff" />
+              <Text style={styles.downloadText}>İndir</Text>
+            </>
+          )}
         </TouchableOpacity>
-        </View>
-              <TouchableOpacity
-        style={styles.downloadButton}
-        onPress={downloadFile}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator size="small" color="#fff" />
-        ) : (
-          <>
-            <Icon name="cloud-download-outline" size={20} color="#fff" />
-            <Text style={styles.downloadText}>Download</Text>
-          </>
-        )}
-      </TouchableOpacity>
-            {loading && (
-        <View style={styles.progressContainer}>
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-          </View>
-          <Text style={styles.progressText}>{Math.round(progress * 100)}%</Text>
-        </View>
-      )}
 
+        {loading && (
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBar}>
+              <Animated.View 
+                style={[
+                  styles.progressFill, 
+                  { width: `${Math.max(progress * 100, 5)}%` }
+                ]} 
+              />
+            </View>
+            <Text style={styles.progressText}>
+              {progress > 0 ? `${Math.round(progress * 100)}%` : 'Hazırlanıyor...'}
+            </Text>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -150,18 +192,10 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#D6DBDF',
+    flex: 1,
     padding: 15,
-    marginBottom: 20,
-    borderRadius: 50,
-    backgroundColor: '#FBFCFC',
     fontSize: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
+    color: '#2C3E50',
   },
   buttons: {
     flexDirection: 'row',
@@ -207,26 +241,61 @@ const styles = StyleSheet.create({
     marginLeft: 10,
   },
   progressContainer: {
-    marginBottom: 20,
+    marginTop: 20,
+    width: '100%',
     alignItems: 'center',
   },
   progressBar: {
     width: '100%',
-    height: 10,
-    borderRadius: 5,
+    height: 8,
     backgroundColor: '#E0E0E0',
+    borderRadius: 4,
     overflow: 'hidden',
+    marginBottom: 8,
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#007BFF',
+    backgroundColor: '#2ECC71',
+    borderRadius: 4,
   },
   progressText: {
-    marginTop: 10,
+    color: '#666',
     fontSize: 14,
-    color: '#333',
+    fontWeight: '600',
+  },
+  header: {
+    alignItems: 'center',
+    marginBottom: 30,
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#D6DBDF',
+    borderRadius: 50,
+    backgroundColor: '#FBFCFC',
+    paddingHorizontal: 15,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  inputIcon: {
+    marginRight: 10,
+  },
+  clearButton: {
+    padding: 8,
+    marginLeft: 5,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  downloadingButton: {
+    backgroundColor: '#2980B9',
   },
 });
-
 
 export default App;
