@@ -73,30 +73,45 @@ const App = () => {
           onChangeText={setUrl}
         />
         <View style={styles.buttons}>
-          <TouchableOpacity
-            style={[styles.formatButton, format === 'mp3' && styles.activeButton]}
-            onPress={() => setFormat('mp3')}
-          >
-            <Text style={[styles.buttonText, format === 'mp3' && styles.activeButtonText]}>MP3</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.formatButton, format === 'mp4' && styles.activeButton]}
-            onPress={() => setFormat('mp4')}
-          >
-            <Text style={[styles.buttonText, format === 'mp4' && styles.activeButtonText]}>MP4</Text>
-          </TouchableOpacity>
-        </View>
-        <TouchableOpacity
-          style={styles.downloadButton}
-          onPress={downloadFile}
-          disabled={loading}
+                <TouchableOpacity
+          style={[styles.formatButton, format === 'mp3' && styles.activeButton]}
+          onPress={() => setFormat('mp3')}
         >
-          {loading ? (
-            <ActivityIndicator size="small" color="#fff" />
-          ) : (
-            <Text style={styles.downloadText}>Download</Text>
-          )}
+          <Icon name="musical-note" size={18} color={format === 'mp3' ? '#fff' : '#007BFF'} />
+          <Text style={[styles.buttonText, format === 'mp3' && styles.activeButtonText]}>MP3</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.formatButton, format === 'mp4' && styles.activeButton]}
+          onPress={() => setFormat('mp4')}
+        >
+          <Icon name="videocam" size={18} color={format === 'mp4' ? '#fff' : '#007BFF'} />
+          <Text style={[styles.buttonText, format === 'mp4' && styles.activeButtonText]}>MP4</Text>
+        </TouchableOpacity>
+        </View>
+              <TouchableOpacity
+        style={styles.downloadButton}
+        onPress={downloadFile}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator size="small" color="#fff" />
+        ) : (
+          <>
+            <Icon name="cloud-download-outline" size={20} color="#fff" />
+            <Text style={styles.downloadText}>Download</Text>
+          </>
+        )}
+      </TouchableOpacity>
+            {loading && (
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+          </View>
+          <Text style={styles.progressText}>{Math.round(progress * 100)}%</Text>
+        </View>
+      )}
+
       </View>
     </View>
   );
@@ -107,7 +122,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F4F4F8',
+    backgroundColor: '#E8F0FE',
   },
   container: {
     width: '90%',
@@ -116,32 +131,37 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderRadius: 15,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 5 },
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.1,
-    shadowRadius: 10,
-    elevation: 5,
+    shadowRadius: 20,
+    elevation: 8,
   },
   title: {
-    fontSize: 26,
+    fontSize: 28,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 10,
-    color: '#333',
+    color: '#2C3E50',
   },
   subtitle: {
-    fontSize: 14,
+    fontSize: 16,
     textAlign: 'center',
-    color: '#666',
+    color: '#34495E',
     marginBottom: 20,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#D6DBDF',
     padding: 15,
     marginBottom: 20,
-    borderRadius: 10,
-    backgroundColor: '#F9F9F9',
+    borderRadius: 50,
+    backgroundColor: '#FBFCFC',
     fontSize: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5,
   },
   buttons: {
     flexDirection: 'row',
@@ -152,43 +172,61 @@ const styles = StyleSheet.create({
     padding: 15,
     borderWidth: 1,
     borderColor: '#007BFF',
-    borderRadius: 10,
+    borderRadius: 25,
     width: '48%',
     alignItems: 'center',
-    backgroundColor: '#fff',
+    backgroundColor: '#ECF6FF',
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   activeButton: {
     backgroundColor: '#007BFF',
-    borderColor: '#007BFF',
+    borderColor: '#0056B3',
   },
   buttonText: {
     fontSize: 16,
     color: '#007BFF',
+    marginLeft: 5,
   },
   activeButtonText: {
     color: '#fff',
     fontWeight: 'bold',
   },
   downloadButton: {
-    backgroundColor: '#007BFF',
+    backgroundColor: '#3498DB',
     padding: 15,
-    borderRadius: 10,
+    borderRadius: 50,
     alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   downloadText: {
     color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
+    marginLeft: 10,
   },
   progressContainer: {
     marginBottom: 20,
     alignItems: 'center',
   },
+  progressBar: {
+    width: '100%',
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#E0E0E0',
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: '#007BFF',
+  },
   progressText: {
-    marginTop: 5,
+    marginTop: 10,
     fontSize: 14,
     color: '#333',
   },
 });
+
 
 export default App;
